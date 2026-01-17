@@ -2,13 +2,9 @@
 name: garmin
 description: Fetch Garmin Connect data - activities, sleep, heart rate, steps, training stats.
 homepage: https://github.com/jeffton/garmin-skill
-metadata:
-  clawdbot:
-    emoji: "⌚"
-    version: "0.1.1"
-    tags: ["health", "fitness", "garmin", "wearable"]
-    requires:
-      bins: ["python3", "garmin_cli.py"]
+emoji: "⌚"
+version: 0.1.1
+tags: health, fitness, garmin, wearable
 ---
 
 # garmin
@@ -20,6 +16,8 @@ Fetch personal health and fitness data from Garmin Connect.
 ```bash
 pip install garminconnect
 ```
+
+Requires: Python 3.8+, garminconnect library
 
 ## Setup
 
