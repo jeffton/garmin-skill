@@ -219,11 +219,12 @@ def cmd_daily_summary():
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
         
         user_summary = client.get_user_summary(today)
-        steps_data = client.get_steps_data(today)
-        heart_rates = client.get_heart_rates(today)
         
         # Get sleep from last night (if available)
         sleep_data = client.get_sleep_data(yesterday)
+        
+        # Get training status (VO2 max, training load)
+        training_status = client.get_training_status(today)
         
         result = {
             "date": today,
@@ -255,7 +256,26 @@ def cmd_daily_summary():
                 "moderate": user_summary.get("moderateIntensityMinutes", 0),
                 "vigorous": user_summary.get("vigorousIntensityMinutes", 0),
             },
+            "training": {},
         }
+        
+        # Parse training status (VO2 max, training load)
+        if training_status and isinstance(training_status, dict):
+            vo2 = training_status.get("mostRecentVO2Max", {})
+            if vo2:
+                generic = vo2.get("generic", {})
+                result["training"]["vo2_max"] = generic.get("vo2MaxValue")
+            
+            load = training_status.get("mostRecentTrainingLoadBalance", {})
+            if load:
+                metrics = load.get("metricsTrainingLoadBalanceDTOMap", {})
+                if metrics:
+                    # Get first device's load
+                    first_device = list(metrics.values())[0] if metrics else {}
+                    result["training"]["load_aerobic_low"] = first_device.get("monthlyLoadAerobicLow")
+                    result["training"]["load_aerobic_high"] = first_device.get("monthlyLoadAerobicHigh")
+                    result["training"]["load_anaerobic"] = first_device.get("monthlyLoadAnaerobic")
+                    result["training"]["balance_feedback"] = first_device.get("trainingBalanceFeedbackPhrase")
         
         # Parse sleep data
         if sleep_data and isinstance(sleep_data, dict):
