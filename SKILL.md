@@ -1,23 +1,34 @@
 ---
 name: garmin
-description: Fetch and display Garmin Connect data (activities, steps, sleep, heart rate, training load, VO2 max, and more).
-homepage: https://github.com/cyberjunky/python-garminconnect
-metadata: {"clawdbot":{"emoji":"⌚","version":"0.1.0","tags":["health","fitness","wearable","garmin"],"requires":{"bins":["python3","garmin_cli.py"]},"install":[{"id":"pip","kind":"pip","package":"garminconnect","label":"Install garminconnect (pip)"},{"id":"manual","kind":"manual","steps":["Copy garmin_cli.py to your path","Run: garmin_cli.py login <email> <password>"],"label":"Manual install"}]}}
+description: Fetch Garmin Connect data - activities, sleep, heart rate, steps, training stats.
+homepage: https://github.com/jeffton/garmin-skill
+metadata:
+  clawdbot:
+    emoji: "⌚"
+    version: "0.1.1"
+    tags: ["health", "fitness", "garmin", "wearable"]
+    requires:
+      bins: ["python3", "garmin_cli.py"]
 ---
 
 # garmin
 
 Fetch personal health and fitness data from Garmin Connect.
 
+## Install
+
+```bash
+pip install garminconnect
+```
+
 ## Setup
 
-1. Install the Garmin Connect library:
+1. Login to Garmin Connect:
    ```bash
-   pip install garminconnect
+   ./garmin_cli.py login <email> <password>
    ```
 
-2. Login to Garmin Connect:
-   ```bash
+2. Credentials stored in `~/.config/garmin/credentials.json`
    ./garmin_cli.py login <email> <password>
    ```
 
