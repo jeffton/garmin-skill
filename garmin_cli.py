@@ -14,7 +14,12 @@ GARMIN_LIB_PATH = os.environ.get('GARMIN_LIB_PATH', '')
 if GARMIN_LIB_PATH:
     sys.path.insert(0, GARMIN_LIB_PATH)
 
-from garminconnect import Garmin
+try:
+    from garminconnect import Garmin
+    GARMIN_IMPORT_ERROR = None
+except ImportError as e:
+    Garmin = None
+    GARMIN_IMPORT_ERROR = str(e)
 
 CONFIG_DIR = os.path.expanduser('~/.config/garmin')
 CREDENTIALS_FILE = os.path.join(CONFIG_DIR, 'credentials.json')
@@ -52,10 +57,10 @@ def format_duration(seconds):
     return f"{h}h {m}m"
 
 def cmd_login(email, password):
-    save_credentials(email, password)
     client = Garmin(email, password)
     try:
         client.login()
+        save_credentials(email, password)
         return {"status": "success", "message": f"Logged in as {email}"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -279,7 +284,11 @@ def main():
     if len(sys.argv) < 2:
         print(json.dumps({"status": "error", "message": "Usage: garmin_cli.py <command> [args]"}))
         sys.exit(1)
-    
+
+    if Garmin is None:
+        print(json.dumps({"status": "error", "message": "garminconnect is not installed. Run: pip install -r requirements.txt", "details": GARMIN_IMPORT_ERROR}))
+        sys.exit(1)
+
     cmd = sys.argv[1]
     
     if cmd == 'login':

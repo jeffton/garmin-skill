@@ -19,47 +19,46 @@ Browse and install from https://clawdhub.com
 ### Option 2: Manual Install
 
 ```bash
-# Install dependencies
-pip install garminconnect
-
 # Clone/download this repo
 git clone https://github.com/YOUR_USERNAME/garmin-skill.git
 cd garmin-skill
+
+# Install dependencies
+pip install -r requirements.txt
 
 # Make executable
 chmod +x garmin_cli.py
 
 # Login to Garmin Connect
 ./garmin_cli.py login your@email.com yourpassword
-
-# (Optional) Move to your path
-sudo mv garmin_cli.py /usr/local/bin/
 ```
 
 ## Usage
 
 ```bash
 # Check login status
-garmin_cli.py status
+./garmin_cli.py status
 
 # Today's summary
-garmin_cli.py today
+./garmin_cli.py today
 
 # Daily stats (steps, HR, body battery)
-garmin_cli.py daily
+./garmin_cli.py daily
 
 # Last 7 days of activities
-garmin_cli.py activities
+./garmin_cli.py activities
 
 # Step count for today
-garmin_cli.py steps
+./garmin_cli.py steps
 
 # Sleep data
-garmin_cli.py sleep 2026-01-17
+./garmin_cli.py sleep 2026-01-17
 
 # Detailed stats (VO2 max, training load)
-garmin_cli.py stats
+./garmin_cli.py stats
 ```
+
+All commands output JSON.
 
 ## Credentials
 
@@ -81,4 +80,3 @@ MIT License - See LICENSE file for details.
 
 - Built on [python-garminconnect](https://github.com/cyberjunky/python-garminconnect) by @cyberjunky
 - Inspired by Clawdbot skill ecosystem
-
