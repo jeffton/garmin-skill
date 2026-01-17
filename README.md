@@ -82,6 +82,4 @@ MIT License - See LICENSE file for details.
 - Built on [python-garminconnect](https://github.com/cyberjunky/python-garminconnect) by @cyberjunky
 - Inspired by Clawdbot skill ecosystem
 
-## Contributing
-
-Issues and PRs welcome! Please read the contributing guidelines before submitting.
+## Support
