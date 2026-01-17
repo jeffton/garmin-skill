@@ -43,6 +43,14 @@ def get_client():
     except Exception as e:
         return None, str(e)
 
+def format_duration(seconds):
+    """Convert seconds to human-readable format."""
+    if seconds is None:
+        return "N/A"
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    return f"{h}h {m}m"
+
 def cmd_login(email, password):
     save_credentials(email, password)
     client = Garmin(email, password)
@@ -107,7 +115,60 @@ def cmd_sleep(date=None):
         if not date:
             date = datetime.now().strftime('%Y-%m-%d')
         sleep_data = client.get_sleep_data(date)
-        return {"status": "success", "data": sleep_data}
+        
+        # Parse comprehensive sleep data
+        result = {"date": date}
+        
+        if isinstance(sleep_data, dict):
+            daily = sleep_data.get("dailySleepDTO", {})
+            
+            # Duration breakdown
+            result["total_seconds"] = daily.get("sleepTimeSeconds", 0)
+            result["total_formatted"] = format_duration(result["total_seconds"])
+            result["deep_seconds"] = daily.get("deepSleepSeconds", 0)
+            result["light_seconds"] = daily.get("lightSleepSeconds", 0)
+            result["rem_seconds"] = daily.get("remSleepSeconds", 0)
+            result["awake_seconds"] = daily.get("awakeSleepSeconds", 0)
+            result["nap_seconds"] = daily.get("napTimeSeconds", 0)
+            
+            # Percentages
+            result["deep_percent"] = daily.get("deepPercentage")
+            result["light_percent"] = daily.get("lightPercentage")
+            result["rem_percent"] = daily.get("remPercentage")
+            
+            # Scores
+            scores = daily.get("sleepScores", {})
+            if scores:
+                overall = scores.get("overall", {})
+                result["sleep_score"] = overall.get("value")
+                result["sleep_score_qualifier"] = overall.get("qualifierKey")
+                
+                result["score_duration"] = scores.get("totalDuration", {}).get("qualifierKey")
+                result["score_stress"] = scores.get("stress", {}).get("qualifierKey")
+                result["score_awake"] = scores.get("awakeCount", {}).get("qualifierKey")
+                result["score_rem"] = scores.get("remPercentage", {}).get("qualifierKey")
+                result["score_light"] = scores.get("lightPercentage", {}).get("qualifierKey")
+                result["score_deep"] = scores.get("deepPercentage", {}).get("qualifierKey")
+                result["score_restlessness"] = scores.get("restlessness", {}).get("qualifierKey")
+            
+            # Feedback/insights
+            result["feedback"] = daily.get("sleepScoreFeedback")
+            result["insight"] = daily.get("sleepScoreInsight")
+            
+            # HRV and physiology
+            result["resting_heart_rate"] = sleep_data.get("restingHeartRate")
+            result["avg_overnight_hrv"] = sleep_data.get("avgOvernightHrv")
+            result["hrv_status"] = sleep_data.get("hrvStatus")
+            result["avg_respiration"] = daily.get("averageRespirationValue")
+            result["restless_moments"] = sleep_data.get("restlessMomentsCount")
+            result["sleep_stress"] = daily.get("avgSleepStress")
+            
+            # Timestamps
+            result["start_gmt"] = daily.get("sleepStartTimestampGMT")
+            result["end_gmt"] = daily.get("sleepEndTimestampGMT")
+            result["duration_confirmed"] = daily.get("sleepWindowConfirmed")
+        
+        return {"status": "success", "data": result}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
