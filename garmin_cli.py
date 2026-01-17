@@ -249,9 +249,6 @@ def cmd_daily_summary():
                 "average": user_summary.get("averageStressLevel", 0),
                 "max": user_summary.get("maxStressLevel", 0),
             },
-            "floors": {
-                "ascended": user_summary.get("floorsAscendedInMeters", 0),
-            },
             "intensity_minutes": {
                 "moderate": user_summary.get("moderateIntensityMinutes", 0),
                 "vigorous": user_summary.get("vigorousIntensityMinutes", 0),
