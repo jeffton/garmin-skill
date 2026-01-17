@@ -220,71 +220,6 @@ def cmd_stats():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def cmd_acwr():
-    """Calculate Acute:Chronic Workload Ratio (ACWR)."""
-    client, err = get_client()
-    if err:
-        return {"status": "error", "message": err}
-    try:
-        today = datetime.now()
-        
-        # ACWR uses active calories as load proxy
-        acute_days = 7
-        chronic_days = 28
-        
-        acute_loads = []
-        chronic_loads = []
-        
-        for i in range(chronic_days):
-            date = (today - timedelta(days=i)).strftime('%Y-%m-%d')
-            try:
-                summary = client.get_user_summary(date)
-                # Use active kilocalories as load proxy
-                load = summary.get("activeKilocalories", 0)
-                if load is not None and load > 0:
-                    chronic_loads.append(load)
-                    if i < acute_days:
-                        acute_loads.append(load)
-            except:
-                pass
-        
-        if not chronic_loads:
-            return {"status": "error", "message": "No training load data available"}
-        
-        acute_avg = sum(acute_loads) / len(acute_loads) if acute_loads else 0
-        chronic_avg = sum(chronic_loads) / len(chronic_loads)
-        
-        ratio = round(acute_avg / chronic_avg, 2) if chronic_avg > 0 else 0
-        
-        result = {
-            "date": today.strftime('%Y-%m-%d'),
-            "acute_days": acute_days,
-            "chronic_days": chronic_days,
-            "acute_avg_load": round(acute_avg, 2),
-            "chronic_avg_load": round(chronic_avg, 2),
-            "acwr": ratio,
-            "interpretation": interpret_acwr(ratio),
-            "data_points": {
-                "acute": len(acute_loads),
-                "chronic": len(chronic_loads),
-            }
-        }
-        
-        return {"status": "success", "data": result}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-def interpret_acwr(ratio):
-    """Interpret ACWR value."""
-    if ratio < 0.8:
-        return "For lav - øg gradvist"
-    elif 0.8 <= ratio <= 1.3:
-        return "Optimal zone - godt sustain"
-    elif 1.3 < ratio <= 1.5:
-        return "Moderat forhøjet - vær opmærksom"
-    else:
-        return "Høj risiko - reducér belastning"
-
 def cmd_daily_summary():
     """Get comprehensive daily summary including sleep, steps, HR, body battery."""
     client, err = get_client()
@@ -418,8 +353,6 @@ def main():
         result = cmd_stats()
     elif cmd == 'summary':
         result = cmd_daily_summary()
-    elif cmd == 'acwr':
-        result = cmd_acwr()
     else:
         result = {"status": "error", "message": f"Unknown command: {cmd}"}
     
