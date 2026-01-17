@@ -47,6 +47,7 @@ Credentials stored in `~/.config/garmin/credentials.json`.
 | `./garmin_cli.py sleep [date]` | Get sleep data |
 | `./garmin_cli.py stats` | Get detailed stats |
 | `./garmin_cli.py summary` | Comprehensive daily summary |
+| `./garmin_cli.py acwr` | Acute:Chronic Workload Ratio |
 
 ## Examples
 
@@ -69,11 +70,11 @@ Credentials stored in `~/.config/garmin/credentials.json`.
 
 ## Data Available
 
-- **Daily**: Steps, distance, calories, floors, body battery
+- **Daily**: Steps, distance, calories, body battery
 - **Sleep**: Duration, deep/light/REM, sleep score, HRV
 - **Heart rate**: Resting, max, HRV, body battery
+- **Training**: VO2 max, training load, ACWR
 - **Activities**: Running, cycling, swimming, etc.
-- **Training**: VO2 max, training load
 - **Stress**: Levels, body battery impact
 
 ## Notes
