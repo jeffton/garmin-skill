@@ -40,6 +40,7 @@ Fetch personal health and fitness data from Garmin Connect.
 | `garmin_cli.py steps [days]` | Get step count (default: today) |
 | `garmin_cli.py sleep [date]` | Get sleep data (YYYY-MM-DD, default: today) |
 | `garmin_cli.py stats` | Get detailed stats (VO2 max, training load, etc.) |
+| `garmin_cli.py summary` | Comprehensive daily summary (steps, sleep, HR, body battery, stress) |
 
 ## Examples
 
@@ -61,16 +62,20 @@ garmin_cli.py sleep 2026-01-15
 
 # Get detailed stats (VO2 max, training load, etc.)
 garmin_cli.py stats
+
+# Comprehensive daily summary
+garmin_cli.py summary
 ```
 
 ## Data Available
 
+- **Daily Summary**: Steps, distance, calories, floors, intensity minutes, body battery
 - **Activities**: running, cycling, swimming, walking, etc.
 - **Daily stats**: steps, distance, calories, floors
 - **Heart rate**: resting HR, max HR, HRV, body battery
-- **Sleep**: sleep duration, deep/light/REM stages
+- **Sleep**: sleep duration, SpO2, HRV, resting heart rate
 - **Training**: VO2 max, training load, training effect
-- **Stress**: stress levels throughout the day
+- **Stress**: stress levels throughout the day, body battery
 
 ## Notes
 
