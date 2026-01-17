@@ -272,9 +272,19 @@ def cmd_daily_summary():
                 if metrics:
                     # Get first device's load
                     first_device = list(metrics.values())[0] if metrics else {}
-                    result["training"]["load_aerobic_low"] = first_device.get("monthlyLoadAerobicLow")
-                    result["training"]["load_aerobic_high"] = first_device.get("monthlyLoadAerobicHigh")
-                    result["training"]["load_anaerobic"] = first_device.get("monthlyLoadAnaerobic")
+                    aerobic_low = first_device.get("monthlyLoadAerobicLow", 0)
+                    aerobic_high = first_device.get("monthlyLoadAerobicHigh", 0)
+                    anaerobic = first_device.get("monthlyLoadAnaerobic", 0)
+                    
+                    result["training"]["load_aerobic_low"] = aerobic_low
+                    result["training"]["load_aerobic_high"] = aerobic_high
+                    result["training"]["load_anaerobic"] = anaerobic
+                    
+                    # Calculate load ratio (aerobic total / anaerobic)
+                    aerobic_total = aerobic_low + aerobic_high
+                    if anaerobic > 0:
+                        result["training"]["load_ratio"] = round(aerobic_total / anaerobic, 2)
+                    
                     result["training"]["balance_feedback"] = first_device.get("trainingBalanceFeedbackPhrase")
         
         # Parse sleep data
