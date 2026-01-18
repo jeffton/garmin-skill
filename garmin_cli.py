@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
-"""
-Garmin Connect CLI wrapper for Clawdbot skill.
-Usage: python3 garmin_cli.py <command> [args]
+"""Garmin Connect CLI wrapper for Clawdbot skill.
+
+Outputs JSON by default (stable for scripting). Use `--format text` for a
+human-friendly summary.
+
+Examples:
+  ./garmin_cli.py status
+  ./garmin_cli.py summary
+  ./garmin_cli.py --format text summary
+  ./garmin_cli.py sleep 2026-01-17
 """
 
 import argparse
@@ -10,7 +17,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 
-GARMIN_LIB_PATH = os.environ.get('GARMIN_LIB_PATH', '')
+GARMIN_LIB_PATH = os.environ.get("GARMIN_LIB_PATH", "")
 if GARMIN_LIB_PATH:
     sys.path.insert(0, GARMIN_LIB_PATH)
 
@@ -19,47 +26,52 @@ try:
 except ImportError:
     Garmin = None
 
-CONFIG_DIR = os.path.expanduser('~/.config/garmin')
-CREDENTIALS_FILE = os.path.join(CONFIG_DIR, 'credentials.json')
+CONFIG_DIR = os.path.expanduser("~/.config/garmin")
+CREDENTIALS_FILE = os.path.join(CONFIG_DIR, "credentials.json")
+
 
 def load_credentials():
     if os.path.exists(CREDENTIALS_FILE):
-        with open(CREDENTIALS_FILE, 'r') as f:
-            return json.load(f)
+        with open(CREDENTIALS_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
     return None
+
 
 def save_credentials(email, password):
     os.makedirs(CONFIG_DIR, exist_ok=True)
-    with open(CREDENTIALS_FILE, 'w') as f:
-        json.dump({'email': email, 'password': password}, f)
+    with open(CREDENTIALS_FILE, "w", encoding="utf-8") as file:
+        json.dump({"email": email, "password": password}, file)
     os.chmod(CREDENTIALS_FILE, 0o600)
+
 
 def get_client():
     creds = load_credentials()
     if not creds:
-        return None, "No credentials. Run: garmin_cli.py login <email> <password>"
-    
-    client = Garmin(creds['email'], creds['password'])
+        return None, f"No credentials. Run: garmin_cli.py login <email> <password> (stores in {CREDENTIALS_FILE})"
+
+    client = Garmin(creds["email"], creds["password"])
     try:
         client.login()
         return client, None
-    except Exception as e:
-        return None, str(e)
+    except Exception as exc:
+        return None, str(exc)
+
 
 def format_duration(seconds):
     if seconds is None:
         return "N/A"
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    return f"{h}h {m}m"
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    return f"{hours}h {minutes}m"
+
 
 def parse_sleep_data(sleep_data):
     """Parse sleep data - used by both cmd_sleep and cmd_summary."""
     if not isinstance(sleep_data, dict):
         return {}
-    
+
     daily = sleep_data.get("dailySleepDTO", {})
-    
+
     result = {
         "total_seconds": daily.get("sleepTimeSeconds", 0),
         "total_formatted": format_duration(daily.get("sleepTimeSeconds")),
@@ -72,8 +84,9 @@ def parse_sleep_data(sleep_data):
         "hrv_status": sleep_data.get("hrvStatus"),
         "sleep_score": daily.get("sleepScores", {}).get("overall", {}).get("value"),
     }
-    
+
     return result
+
 
 def cmd_login(email, password):
     client = Garmin(email, password)
@@ -81,8 +94,9 @@ def cmd_login(email, password):
         client.login()
         save_credentials(email, password)
         return {"status": "success", "message": f"Logged in as {email}"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
 
 def cmd_status():
     client, err = get_client()
@@ -90,16 +104,18 @@ def cmd_status():
         return {"status": "error", "message": err}
     return {"status": "success", "logged_in": True}
 
+
 def cmd_today():
     client, err = get_client()
     if err:
         return {"status": "error", "message": err}
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.now().strftime("%Y-%m-%d")
         data = client.get_user_summary(today)
         return {"status": "success", "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
 
 def cmd_activities(days=7):
     client, err = get_client()
@@ -109,12 +125,13 @@ def cmd_activities(days=7):
         today = datetime.now()
         activities = []
         for i in range(days):
-            date = (today - timedelta(days=i)).strftime('%Y-%m-%d')
+            date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
             day_acts = client.get_activities_by_date(date, date)
             activities.extend(day_acts)
         return {"status": "success", "activities": activities[:50]}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
 
 def cmd_steps(days=1):
     client, err = get_client()
@@ -124,12 +141,13 @@ def cmd_steps(days=1):
         today = datetime.now()
         data = []
         for i in range(days):
-            date = (today - timedelta(days=i)).strftime('%Y-%m-%d')
+            date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
             day_data = client.get_steps_data(date)
             data.append({"date": date, "steps": day_data})
         return {"status": "success", "data": data}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
 
 def cmd_sleep(date=None):
     client, err = get_client()
@@ -137,13 +155,14 @@ def cmd_sleep(date=None):
         return {"status": "error", "message": err}
     try:
         if not date:
-            date = datetime.now().strftime('%Y-%m-%d')
+            date = datetime.now().strftime("%Y-%m-%d")
         sleep_data = client.get_sleep_data(date)
         result = {"date": date}
         result.update(parse_sleep_data(sleep_data))
         return {"status": "success", "data": result}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
 
 def cmd_summary():
     """Get comprehensive daily summary."""
@@ -151,13 +170,13 @@ def cmd_summary():
     if err:
         return {"status": "error", "message": err}
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        
+        today = datetime.now().strftime("%Y-%m-%d")
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
         user_summary = client.get_user_summary(today)
         sleep_data = client.get_sleep_data(yesterday)
         training_status = client.get_training_status(today)
-        
+
         result = {
             "date": today,
             "steps": user_summary.get("totalSteps", 0),
@@ -172,16 +191,96 @@ def cmd_summary():
                 "lowest": user_summary.get("bodyBatteryLowestValue", 0),
             },
             "sleep": parse_sleep_data(sleep_data),
-            "vo2_max": training_status.get("mostRecentVO2Max", {}).get("generic", {}).get("vo2MaxValue") if training_status else None,
+            "vo2_max": (
+                training_status.get("mostRecentVO2Max", {}).get("generic", {}).get("vo2MaxValue")
+                if training_status
+                else None
+            ),
         }
-        
+
         return {"status": "success", "data": result}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
+def print_text(command: str, result: dict):
+    status = result.get("status")
+    if status != "success":
+        print(result.get("message", "Error"))
+        return
+
+    if command in {"summary", "stats"}:
+        data = result.get("data", {})
+        hr = data.get("heart_rate", {})
+        bb = data.get("body_battery", {})
+        sleep = data.get("sleep", {})
+
+        print(f"Dato: {data.get('date')}")
+        print(f"Skridt: {data.get('steps')}")
+        print(f"Distance: {data.get('distance_km')} km")
+        print(f"Kalorier: {data.get('calories')}")
+        print(f"Hvilepuls: {hr.get('resting')}")
+        print(f"Max puls: {hr.get('max')}")
+        print(f"Body Battery: {bb.get('lowest')} → {bb.get('highest')}")
+        if sleep:
+            print(f"Søvn: {sleep.get('total_formatted')} (score: {sleep.get('sleep_score')})")
+        if data.get("vo2_max") is not None:
+            print(f"VO2 max: {data.get('vo2_max')}")
+        return
+
+    if command == "sleep":
+        data = result.get("data", {})
+        print(f"Dato: {data.get('date')}")
+        print(f"Søvn: {data.get('total_formatted')} (score: {data.get('sleep_score')})")
+        if data.get("resting_heart_rate") is not None:
+            print(f"Hvilepuls: {data.get('resting_heart_rate')}")
+        if data.get("avg_overnight_hrv") is not None:
+            print(f"HRV: {data.get('avg_overnight_hrv')} ({data.get('hrv_status')})")
+        return
+
+    if command == "status":
+        print("OK: logged in")
+        return
+
+    if command == "steps":
+        for row in result.get("data", []):
+            print(f"{row.get('date')}: {row.get('steps')}")
+        return
+
+    if command == "activities":
+        activities = result.get("activities", [])
+        print(f"Aktiviteter: {len(activities)}")
+        for act in activities[:10]:
+            name = act.get("activityName") or act.get("activityType", {}).get("typeKey") or "Activity"
+            start = act.get("startTimeLocal") or ""
+            dist = act.get("distance")
+            if dist is not None:
+                dist = round(dist / 1000, 2)
+                print(f"- {start}: {name} ({dist} km)")
+            else:
+                print(f"- {start}: {name}")
+        return
+
+    if command in {"today", "daily"}:
+        data = result.get("data", {})
+        print(f"Dato: {datetime.now().strftime('%Y-%m-%d')}")
+        print(f"Skridt: {data.get('totalSteps')}")
+        print(f"Distance: {round((data.get('totalDistanceMeters', 0) or 0) / 1000, 1)} km")
+        print(f"Kalorier: {data.get('totalKilocalories')}")
+        return
+
+    print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
+
 
 def main():
     parser = argparse.ArgumentParser(description="Garmin Connect CLI")
-    parser.add_argument("command", help="Command: login, status, today, activities, steps, sleep, summary")
+    parser.add_argument(
+        "--format",
+        choices=["json", "text"],
+        default="json",
+        help="Output format (default: json)",
+    )
+    parser.add_argument("command", help="Command: login, status, today, daily, activities, steps, sleep, summary, stats")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
 
     args = parser.parse_args()
@@ -196,7 +295,7 @@ def main():
             result = cmd_login(args.args[0], args.args[1])
     elif cmd == "status":
         result = cmd_status()
-    elif cmd == "today":
+    elif cmd in {"today", "daily"}:
         result = cmd_today()
     elif cmd == "activities":
         days = int(args.args[0]) if args.args else 7
@@ -207,12 +306,16 @@ def main():
     elif cmd == "sleep":
         date = args.args[0] if args.args else None
         result = cmd_sleep(date)
-    elif cmd == "summary":
+    elif cmd in {"summary", "stats"}:
         result = cmd_summary()
     else:
         result = {"status": "error", "message": f"Unknown command: {cmd}"}
 
-    print(json.dumps(result, default=str))
+    if args.format == "text":
+        print_text(cmd, result)
+    else:
+        print(json.dumps(result, ensure_ascii=False, default=str))
+
 
 if __name__ == "__main__":
     main()

@@ -39,11 +39,13 @@ chmod +x garmin_cli.py
 # Check login status
 ./garmin_cli.py status
 
-# Today's summary
+# Today's summary (alias: daily)
 ./garmin_cli.py today
-
-# Daily stats (steps, HR, body battery)
 ./garmin_cli.py daily
+
+# Comprehensive daily summary (alias: stats)
+./garmin_cli.py summary
+./garmin_cli.py stats
 
 # Last 7 days of activities
 ./garmin_cli.py activities
@@ -54,11 +56,11 @@ chmod +x garmin_cli.py
 # Sleep data
 ./garmin_cli.py sleep 2026-01-17
 
-# Detailed stats (VO2 max, training load)
-./garmin_cli.py stats
+# Human-friendly output
+./garmin_cli.py --format text summary
 ```
 
-All commands output JSON.
+All commands output JSON by default.
 
 ## Credentials
 
