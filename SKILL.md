@@ -18,19 +18,12 @@ metadata:
 
 Fetch personal health and fitness data from Garmin Connect.
 
-## Install
-
-```bash
-pip install -r requirements.txt
-```
-
-Requires: Python 3.8+, garminconnect library.
-
 ## Setup
 
-Login to Garmin Connect:
+The CLI is already installed. Login once:
+
 ```bash
-./garmin_cli.py login <email> <password>
+/root/clawd/skills/garmin/garmin_cli.py login <email> <password>
 ```
 
 Credentials stored in `~/.config/garmin/credentials.json`.
@@ -39,32 +32,29 @@ Credentials stored in `~/.config/garmin/credentials.json`.
 
 | Command | Description |
 |---------|-------------|
-| `./garmin_cli.py status` | Check if logged in |
-| `./garmin_cli.py today` | Get today's user summary |
-| `./garmin_cli.py daily` | Get daily stats |
-| `./garmin_cli.py activities [days]` | Get activities |
-| `./garmin_cli.py steps [days]` | Get step count |
-| `./garmin_cli.py sleep [date]` | Get sleep data |
-| `./garmin_cli.py stats` | Get detailed stats |
-| `./garmin_cli.py summary` | Comprehensive daily summary |
+| `garmin_cli.py status` | Check if logged in |
+| `garmin_cli.py today` | Get today's user summary |
+| `garmin_cli.py daily` | Get daily stats |
+| `garmin_cli.py activities [days]` | Get activities |
+| `garmin_cli.py steps [days]` | Get step count |
+| `garmin_cli.py sleep [date]` | Get sleep data |
+| `garmin_cli.py stats` | Get detailed stats |
+| `garmin_cli.py summary` | Comprehensive daily summary |
 
 ## Examples
 
 ```bash
-# Login
-./garmin_cli.py login din@email.dk ditpassword
-
 # Check status
-./garmin_cli.py status
+/root/clawd/skills/garmin/garmin_cli.py status
 
 # Today's summary
-./garmin_cli.py today
+/root/clawd/skills/garmin/garmin_cli.py today
 
 # Sleep data
-./garmin_cli.py sleep 2026-01-15
+/root/clawd/skills/garmin/garmin_cli.py sleep 2026-01-15
 
 # Comprehensive summary
-./garmin_cli.py summary
+/root/clawd/skills/garmin/garmin_cli.py summary
 ```
 
 ## Data Available
@@ -80,5 +70,4 @@ Credentials stored in `~/.config/garmin/credentials.json`.
 
 - Requires Garmin Connect credentials.
 - API rate-limited; avoid spam.
-- Protect credentials file.
 - All commands output JSON.
