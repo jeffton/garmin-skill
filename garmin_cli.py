@@ -4,22 +4,20 @@ Garmin Connect CLI wrapper for Clawdbot skill.
 Usage: python3 garmin_cli.py <command> [args]
 """
 
+import argparse
+import json
 import os
 import sys
-import json
 from datetime import datetime, timedelta
 
-# Allow override of garminconnect import path via env
 GARMIN_LIB_PATH = os.environ.get('GARMIN_LIB_PATH', '')
 if GARMIN_LIB_PATH:
     sys.path.insert(0, GARMIN_LIB_PATH)
 
 try:
     from garminconnect import Garmin
-    GARMIN_IMPORT_ERROR = None
-except ImportError as e:
+except ImportError:
     Garmin = None
-    GARMIN_IMPORT_ERROR = str(e)
 
 CONFIG_DIR = os.path.expanduser('~/.config/garmin')
 CREDENTIALS_FILE = os.path.join(CONFIG_DIR, 'credentials.json')
@@ -39,7 +37,7 @@ def save_credentials(email, password):
 def get_client():
     creds = load_credentials()
     if not creds:
-        return None, "No credentials found. Run: garmin_cli.py login <email> <password>"
+        return None, "No credentials. Run: garmin_cli.py login <email> <password>"
     
     client = Garmin(creds['email'], creds['password'])
     try:
@@ -48,24 +46,34 @@ def get_client():
     except Exception as e:
         return None, str(e)
 
-def interpret_acwr(ratio):
-    """Interpret ACWR value."""
-    if ratio < 0.8:
-        return "For lav - øg gradvist"
-    elif 0.8 <= ratio <= 1.3:
-        return "Optimal zone - godt sustain"
-    elif 1.3 < ratio <= 1.5:
-        return "Moderat forhøjet - vær opmærksom"
-    else:
-        return "Høj risiko - reducér belastning"
-
 def format_duration(seconds):
-    """Convert seconds to human-readable format."""
     if seconds is None:
         return "N/A"
     h = int(seconds // 3600)
     m = int((seconds % 3600) // 60)
     return f"{h}h {m}m"
+
+def parse_sleep_data(sleep_data):
+    """Parse sleep data - used by both cmd_sleep and cmd_summary."""
+    if not isinstance(sleep_data, dict):
+        return {}
+    
+    daily = sleep_data.get("dailySleepDTO", {})
+    
+    result = {
+        "total_seconds": daily.get("sleepTimeSeconds", 0),
+        "total_formatted": format_duration(daily.get("sleepTimeSeconds")),
+        "deep_seconds": daily.get("deepSleepSeconds", 0),
+        "light_seconds": daily.get("lightSleepSeconds", 0),
+        "rem_seconds": daily.get("remSleepSeconds", 0),
+        "awake_seconds": daily.get("awakeSleepSeconds", 0),
+        "resting_heart_rate": sleep_data.get("restingHeartRate"),
+        "avg_overnight_hrv": sleep_data.get("avgOvernightHrv"),
+        "hrv_status": sleep_data.get("hrvStatus"),
+        "sleep_score": daily.get("sleepScores", {}).get("overall", {}).get("value"),
+    }
+    
+    return result
 
 def cmd_login(email, password):
     client = Garmin(email, password)
@@ -131,97 +139,14 @@ def cmd_sleep(date=None):
         if not date:
             date = datetime.now().strftime('%Y-%m-%d')
         sleep_data = client.get_sleep_data(date)
-        
-        # Parse comprehensive sleep data
         result = {"date": date}
-        
-        if isinstance(sleep_data, dict):
-            daily = sleep_data.get("dailySleepDTO", {})
-            
-            # Duration breakdown
-            result["total_seconds"] = daily.get("sleepTimeSeconds", 0)
-            result["total_formatted"] = format_duration(result["total_seconds"])
-            result["deep_seconds"] = daily.get("deepSleepSeconds", 0)
-            result["light_seconds"] = daily.get("lightSleepSeconds", 0)
-            result["rem_seconds"] = daily.get("remSleepSeconds", 0)
-            result["awake_seconds"] = daily.get("awakeSleepSeconds", 0)
-            result["nap_seconds"] = daily.get("napTimeSeconds", 0)
-            
-            # Percentages
-            result["deep_percent"] = daily.get("deepPercentage")
-            result["light_percent"] = daily.get("lightPercentage")
-            result["rem_percent"] = daily.get("remPercentage")
-            
-            # Scores
-            scores = daily.get("sleepScores", {})
-            if scores:
-                overall = scores.get("overall", {})
-                result["sleep_score"] = overall.get("value")
-                result["sleep_score_qualifier"] = overall.get("qualifierKey")
-                
-                result["score_duration"] = scores.get("totalDuration", {}).get("qualifierKey")
-                result["score_stress"] = scores.get("stress", {}).get("qualifierKey")
-                result["score_awake"] = scores.get("awakeCount", {}).get("qualifierKey")
-                result["score_rem"] = scores.get("remPercentage", {}).get("qualifierKey")
-                result["score_light"] = scores.get("lightPercentage", {}).get("qualifierKey")
-                result["score_deep"] = scores.get("deepPercentage", {}).get("qualifierKey")
-                result["score_restlessness"] = scores.get("restlessness", {}).get("qualifierKey")
-            
-            # Feedback/insights
-            result["feedback"] = daily.get("sleepScoreFeedback")
-            result["insight"] = daily.get("sleepScoreInsight")
-            
-            # HRV and physiology
-            result["resting_heart_rate"] = sleep_data.get("restingHeartRate")
-            result["avg_overnight_hrv"] = sleep_data.get("avgOvernightHrv")
-            result["hrv_status"] = sleep_data.get("hrvStatus")
-            result["avg_respiration"] = daily.get("averageRespirationValue")
-            result["restless_moments"] = sleep_data.get("restlessMomentsCount")
-            result["sleep_stress"] = daily.get("avgSleepStress")
-            
-            # Timestamps
-            result["start_gmt"] = daily.get("sleepStartTimestampGMT")
-            result["end_gmt"] = daily.get("sleepEndTimestampGMT")
-            result["duration_confirmed"] = daily.get("sleepWindowConfirmed")
-        
+        result.update(parse_sleep_data(sleep_data))
         return {"status": "success", "data": result}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def cmd_daily_stats():
-    client, err = get_client()
-    if err:
-        return {"status": "error", "message": err}
-    try:
-        today = datetime.now().strftime('%Y-%m-%d')
-        stats = {
-            "user_summary": client.get_user_summary(today),
-            "steps": client.get_steps_data(today),
-            "heart_rates": client.get_heart_rates(today),
-        }
-        return {"status": "success", "data": stats}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-def cmd_stats():
-    client, err = get_client()
-    if err:
-        return {"status": "error", "message": err}
-    try:
-        today = datetime.now().strftime('%Y-%m-%d')
-        stats = {
-            "user_profile": client.get_user_profile(),
-            "stats": client.get_stats(today),
-            "body_composition": client.get_body_composition(today),
-            "vo2_max": client.get_vo2_max(today),
-            "training_load": client.get_training_status(today),
-        }
-        return {"status": "success", "data": stats}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-def cmd_daily_summary():
-    """Get comprehensive daily summary including sleep, steps, HR, body battery."""
+def cmd_summary():
+    """Get comprehensive daily summary."""
     client, err = get_client()
     if err:
         return {"status": "error", "message": err}
@@ -230,133 +155,68 @@ def cmd_daily_summary():
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
         
         user_summary = client.get_user_summary(today)
-        
-        # Get sleep from last night (if available)
         sleep_data = client.get_sleep_data(yesterday)
-        
-        # Get training status (VO2 max, training load)
         training_status = client.get_training_status(today)
         
         result = {
             "date": today,
             "steps": user_summary.get("totalSteps", 0),
-            "distance_meters": user_summary.get("totalDistanceMeters", 0),
-            "calories": {
-                "total": user_summary.get("totalKilocalories", 0),
-                "active": user_summary.get("activeKilocalories", 0),
-            },
+            "distance_km": round(user_summary.get("totalDistanceMeters", 0) / 1000, 1),
+            "calories": user_summary.get("totalKilocalories", 0),
             "heart_rate": {
                 "resting": user_summary.get("restingHeartRate", 0),
-                "min": user_summary.get("minHeartRate", 0),
                 "max": user_summary.get("maxHeartRate", 0),
             },
-            "sleep": {},
             "body_battery": {
                 "highest": user_summary.get("bodyBatteryHighestValue", 0),
                 "lowest": user_summary.get("bodyBatteryLowestValue", 0),
-                "at_wake": user_summary.get("bodyBatteryAtWakeTime", 0),
             },
-            "stress": {
-                "average": user_summary.get("averageStressLevel", 0),
-                "max": user_summary.get("maxStressLevel", 0),
-            },
-            "intensity_minutes": {
-                "moderate": user_summary.get("moderateIntensityMinutes", 0),
-                "vigorous": user_summary.get("vigorousIntensityMinutes", 0),
-            },
-            "training": {},
+            "sleep": parse_sleep_data(sleep_data),
+            "vo2_max": training_status.get("mostRecentVO2Max", {}).get("generic", {}).get("vo2MaxValue") if training_status else None,
         }
-        
-        # Parse training status (VO2 max, training load)
-        if training_status and isinstance(training_status, dict):
-            vo2 = training_status.get("mostRecentVO2Max", {})
-            if vo2:
-                generic = vo2.get("generic", {})
-                result["training"]["vo2_max"] = generic.get("vo2MaxValue")
-            
-            load = training_status.get("mostRecentTrainingLoadBalance", {})
-            if load:
-                metrics = load.get("metricsTrainingLoadBalanceDTOMap", {})
-                if metrics:
-                    # Get first device's load
-                    first_device = list(metrics.values())[0] if metrics else {}
-                    aerobic_low = first_device.get("monthlyLoadAerobicLow", 0)
-                    aerobic_high = first_device.get("monthlyLoadAerobicHigh", 0)
-                    anaerobic = first_device.get("monthlyLoadAnaerobic", 0)
-                    
-                    result["training"]["load_aerobic_low"] = aerobic_low
-                    result["training"]["load_aerobic_high"] = aerobic_high
-                    result["training"]["load_anaerobic"] = anaerobic
-                    
-                    # Calculate load ratio (aerobic total / anaerobic)
-                    aerobic_total = aerobic_low + aerobic_high
-                    if anaerobic > 0:
-                        result["training"]["load_ratio"] = round(aerobic_total / anaerobic, 2)
-                    
-                    result["training"]["balance_feedback"] = first_device.get("trainingBalanceFeedbackPhrase")
-        
-        # Parse sleep data
-        if sleep_data and isinstance(sleep_data, dict):
-            start = sleep_data.get('startTimeGMT', '')
-            end = sleep_data.get('endTimeGMT', '')
-            if start and end:
-                try:
-                    s = datetime.fromisoformat(start.replace('Z', '+00:00'))
-                    e = datetime.fromisoformat(end.replace('Z', '+00:00'))
-                    total_sec = (e - s).total_seconds()
-                    result["sleep"]["total_seconds"] = total_sec
-                    result["sleep"]["formatted"] = f"{int(total_sec//3600)}h {int((total_sec%3600)//60)}m"
-                except:
-                    pass
-            
-            result["sleep"]["resting_heart_rate"] = sleep_data.get("restingHeartRate")
-            result["sleep"]["avg_overnight_hrv"] = sleep_data.get("avgOvernightHrv")
-            result["sleep"]["hrv_status"] = sleep_data.get("hrvStatus")
-            result["sleep"]["avg_spo2"] = sleep_data.get("averageSpO2")
         
         return {"status": "success", "data": result}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 def main():
-    if len(sys.argv) < 2:
-        print(json.dumps({"status": "error", "message": "Usage: garmin_cli.py <command> [args]"}))
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Garmin Connect CLI")
+    parser.add_argument("command", help="Command: login, status, today, activities, steps, sleep, summary")
+    parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
+    parser.add_argument("--format", choices=["json", "text"], default="json", help="Output format")
+
+    args = parser.parse_args()
+    cmd = args.command
 
     if Garmin is None:
-        print(json.dumps({"status": "error", "message": "garminconnect is not installed. Run: pip install -r requirements.txt", "details": GARMIN_IMPORT_ERROR}))
-        sys.exit(1)
-
-    cmd = sys.argv[1]
-    
-    if cmd == 'login':
-        if len(sys.argv) != 4:
-            print(json.dumps({"status": "error", "message": "Usage: garmin_cli.py login <email> <password>"}))
-            sys.exit(1)
-        result = cmd_login(sys.argv[2], sys.argv[3])
-    elif cmd == 'status':
+        result = {"status": "error", "message": "garminconnect not installed"}
+    elif cmd == "login":
+        if len(args.args) != 2:
+            result = {"status": "error", "message": "Usage: login <email> <password>"}
+        else:
+            result = cmd_login(args.args[0], args.args[1])
+    elif cmd == "status":
         result = cmd_status()
-    elif cmd == 'today':
+    elif cmd == "today":
         result = cmd_today()
-    elif cmd == 'activities':
-        days = int(sys.argv[2]) if len(sys.argv) > 2 else 7
+    elif cmd == "activities":
+        days = int(args.args[0]) if args.args else 7
         result = cmd_activities(days)
-    elif cmd == 'steps':
-        days = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+    elif cmd == "steps":
+        days = int(args.args[0]) if args.args else 1
         result = cmd_steps(days)
-    elif cmd == 'sleep':
-        date = sys.argv[2] if len(sys.argv) > 2 else None
+    elif cmd == "sleep":
+        date = args.args[0] if args.args else None
         result = cmd_sleep(date)
-    elif cmd == 'daily':
-        result = cmd_daily_stats()
-    elif cmd == 'stats':
-        result = cmd_stats()
-    elif cmd == 'summary':
-        result = cmd_daily_summary()
+    elif cmd == "summary":
+        result = cmd_summary()
     else:
         result = {"status": "error", "message": f"Unknown command: {cmd}"}
-    
-    print(json.dumps(result, default=str))
 
-if __name__ == '__main__':
+    if args.format == "text" and result.get("status") == "success":
+        print(json.dumps(result, indent=2, default=str))
+    else:
+        print(json.dumps(result, default=str))
+
+if __name__ == "__main__":
     main()
