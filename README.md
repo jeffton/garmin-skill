@@ -2,6 +2,9 @@
 
 Fetch and display Garmin Connect data from your personal health and fitness dashboard.
 
+This skill is designed to be published to ClawdHub: it keeps local environment
+artifacts (like `venv/`) out of git and ships only the CLI + docs.
+
 ## Features
 
 - **Daily Summary**: Steps, calories, distance, heart rate, stress, body battery
@@ -20,10 +23,12 @@ Browse and install from https://clawdhub.com
 
 ```bash
 # Clone/download this repo
-git clone https://github.com/YOUR_USERNAME/garmin-skill.git
+git clone https://github.com/jeffton/garmin-skill.git
 cd garmin-skill
 
-# Install dependencies
+# Install dependencies (recommended: in a virtualenv)
+python3 -m venv .venv
+. .venv/bin/activate
 pip install -r requirements.txt
 
 # Make executable
