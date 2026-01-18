@@ -183,7 +183,6 @@ def main():
     parser = argparse.ArgumentParser(description="Garmin Connect CLI")
     parser.add_argument("command", help="Command: login, status, today, activities, steps, sleep, summary")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
-    parser.add_argument("--format", choices=["json", "text"], default="json", help="Output format")
 
     args = parser.parse_args()
     cmd = args.command
@@ -213,10 +212,7 @@ def main():
     else:
         result = {"status": "error", "message": f"Unknown command: {cmd}"}
 
-    if args.format == "text" and result.get("status") == "success":
-        print(json.dumps(result, indent=2, default=str))
-    else:
-        print(json.dumps(result, default=str))
+    print(json.dumps(result, default=str))
 
 if __name__ == "__main__":
     main()
