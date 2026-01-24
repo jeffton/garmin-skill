@@ -259,6 +259,131 @@ def cmd_sleep_week(days=7):
         return {"status": "error", "message": str(exc)}
 
 
+def format_pace(seconds_per_km):
+    """Convert seconds per km to MM:SS format."""
+    if seconds_per_km is None or seconds_per_km <= 0:
+        return "N/A"
+    minutes = int(seconds_per_km // 60)
+    seconds = int(seconds_per_km % 60)
+    return f"{minutes}:{seconds:02d}"
+
+
+def cmd_run(activity_id=None):
+    """Get detailed running activity with laps and comparison to recent runs."""
+    client, err = get_client()
+    if err:
+        return {"status": "error", "message": err}
+    try:
+        # If no activity_id, find the most recent running activity
+        if activity_id is None:
+            today = datetime.now()
+            found = None
+            for i in range(30):  # Look back 30 days
+                date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+                day_acts = client.get_activities_by_date(date, date)
+                for act in day_acts:
+                    if act.get("activityType", {}).get("typeKey") == "running":
+                        found = act
+                        break
+                if found:
+                    break
+            if not found:
+                return {"status": "error", "message": "No running activities found in last 30 days"}
+            activity_id = found.get("activityId")
+            activity = found
+        else:
+            # Fetch the specific activity
+            activities = client.get_activities(0, 100)
+            activity = next((a for a in activities if a.get("activityId") == activity_id), None)
+            if not activity:
+                return {"status": "error", "message": f"Activity {activity_id} not found"}
+
+        # Get lap splits
+        splits = client.get_activity_splits(activity_id)
+        laps = []
+        for lap in splits.get("lapDTOs", []):
+            distance = lap.get("distance", 0)
+            duration = lap.get("duration", 0)
+            pace_sec = (duration / distance * 1000) if distance > 0 else 0
+            laps.append({
+                "lap": lap.get("lapIndex"),
+                "distance_m": round(distance),
+                "duration_sec": round(duration),
+                "duration_formatted": format_duration(duration),
+                "pace_sec_per_km": round(pace_sec, 1),
+                "pace_formatted": format_pace(pace_sec),
+                "avg_hr": lap.get("averageHR"),
+                "max_hr": lap.get("maxHR"),
+                "avg_power": lap.get("averagePower"),
+                "cadence": round(lap.get("averageRunCadence", 0)),
+                "elevation_gain": lap.get("elevationGain"),
+            })
+
+        # Get recent running activities for comparison
+        recent_runs = []
+        today = datetime.now()
+        count = 0
+        for i in range(60):  # Look back 60 days
+            if count >= 5:
+                break
+            date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+            day_acts = client.get_activities_by_date(date, date)
+            for act in day_acts:
+                if act.get("activityType", {}).get("typeKey") != "running":
+                    continue
+                if act.get("activityId") == activity_id:
+                    continue  # Skip current activity
+                dist = act.get("distance", 0)
+                dur = act.get("duration", 0)
+                pace = (dur / dist * 1000) if dist > 0 else 0
+                recent_runs.append({
+                    "date": act.get("startTimeLocal", "")[:10],
+                    "name": act.get("activityName"),
+                    "distance_km": round(dist / 1000, 2),
+                    "duration_min": round(dur / 60, 1),
+                    "pace_sec_per_km": round(pace, 1),
+                    "pace_formatted": format_pace(pace),
+                    "avg_hr": act.get("averageHR"),
+                    "aerobic_te": round(act.get("aerobicTrainingEffect", 0), 1),
+                    "vo2_max": act.get("vO2MaxValue"),
+                })
+                count += 1
+                if count >= 5:
+                    break
+
+        # Build main activity data
+        dist = activity.get("distance", 0)
+        dur = activity.get("duration", 0)
+        pace = (dur / dist * 1000) if dist > 0 else 0
+
+        result = {
+            "activity_id": activity_id,
+            "name": activity.get("activityName"),
+            "date": activity.get("startTimeLocal"),
+            "distance_km": round(dist / 1000, 2),
+            "duration_sec": round(dur),
+            "duration_formatted": format_duration(dur),
+            "pace_sec_per_km": round(pace, 1),
+            "pace_formatted": format_pace(pace),
+            "avg_hr": activity.get("averageHR"),
+            "max_hr": activity.get("maxHR"),
+            "calories": activity.get("calories"),
+            "avg_power": activity.get("avgPower"),
+            "cadence": round(activity.get("averageRunningCadenceInStepsPerMinute", 0)),
+            "elevation_gain": activity.get("elevationGain"),
+            "aerobic_te": round(activity.get("aerobicTrainingEffect", 0), 1),
+            "anaerobic_te": round(activity.get("anaerobicTrainingEffect", 0), 1),
+            "vo2_max": activity.get("vO2MaxValue"),
+            "training_load": round(activity.get("activityTrainingLoad", 0), 1),
+            "laps": laps,
+            "recent_runs": recent_runs,
+        }
+
+        return {"status": "success", "data": result}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
 def print_text(command: str, result: dict):
     status = result.get("status")
     if status != "success":
@@ -325,6 +450,30 @@ def print_text(command: str, result: dict):
         print(f"Kalorier: {data.get('totalKilocalories')}")
         return
 
+    if command == "run":
+        data = result.get("data", {})
+        print(f"🏃 {data.get('name')} — {data.get('date', '')[:10]}")
+        print(f"Distance: {data.get('distance_km')} km")
+        print(f"Tid: {data.get('duration_formatted')} (pace {data.get('pace_formatted')}/km)")
+        print(f"Puls: {data.get('avg_hr')} snit / {data.get('max_hr')} max")
+        print(f"VO2 Max: {data.get('vo2_max')} | Aerobic TE: {data.get('aerobic_te')}")
+        print()
+
+        laps = data.get("laps", [])
+        if laps:
+            print("Laps:")
+            for lap in laps:
+                dist_label = f"{lap['distance_m']}m" if lap['distance_m'] < 1000 else "1 km"
+                print(f"  {lap['lap']}: {lap['duration_formatted']} ({lap['pace_formatted']}/km) | HR {lap['avg_hr']} | {lap.get('avg_power', '-')}W")
+            print()
+
+        recent = data.get("recent_runs", [])
+        if recent:
+            print("Seneste løb:")
+            for run in recent:
+                print(f"  {run['date']}: {run['distance_km']} km @ {run['pace_formatted']}/km | HR {run['avg_hr']} | VO2 {run['vo2_max']}")
+        return
+
     print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
 
 
@@ -336,7 +485,7 @@ def main():
         default="json",
         help="Output format (default: json)",
     )
-    parser.add_argument("command", help="Command: login, status, today, daily, activities, steps, sleep, sleep-week, summary, stats")
+    parser.add_argument("command", help="Command: login, status, today, daily, activities, steps, sleep, sleep-week, run, summary, stats")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
 
     args = parser.parse_args()
@@ -365,6 +514,9 @@ def main():
     elif cmd == "sleep-week":
         days = int(args.args[0]) if args.args else 7
         result = cmd_sleep_week(days)
+    elif cmd == "run":
+        activity_id = int(args.args[0]) if args.args and not args.args[0].startswith("-") else None
+        result = cmd_run(activity_id)
     elif cmd in {"summary", "stats"}:
         result = cmd_summary()
     else:
