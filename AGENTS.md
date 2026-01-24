@@ -20,6 +20,7 @@ Garmin login gemmes i `~/.config/garmin/credentials.json` (krypteret, ikke i rep
 - `today` / `daily` - Dagens overblik
 - `sleep [date]` - Søvndata for en dato
 - `sleep-week [days]` - Søvndata for N dage med gennemsnit
+- `run [activity_id]` - Detaljeret løbeaktivitet med laps og sammenligning
 - `summary` / `stats` - Komplet dagsoverblik
 - `activities [days]` - Aktiviteter
 
