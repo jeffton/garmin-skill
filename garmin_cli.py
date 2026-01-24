@@ -171,10 +171,10 @@ def cmd_summary():
         return {"status": "error", "message": err}
     try:
         today = datetime.now().strftime("%Y-%m-%d")
-        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
         user_summary = client.get_user_summary(today)
-        sleep_data = client.get_sleep_data(yesterday)
+        # Use today's sleep record so the score matches Garmin's "Sleep today" view.
+        sleep_data = client.get_sleep_data(today)
         training_status = client.get_training_status(today)
 
         result = {
@@ -189,6 +189,7 @@ def cmd_summary():
             "body_battery": {
                 "highest": user_summary.get("bodyBatteryHighestValue", 0),
                 "lowest": user_summary.get("bodyBatteryLowestValue", 0),
+                "most_recent": user_summary.get("bodyBatteryMostRecentValue"),
             },
             "sleep": parse_sleep_data(sleep_data),
             "vo2_max": (
@@ -196,9 +197,64 @@ def cmd_summary():
                 if training_status
                 else None
             ),
+            "last_sync": user_summary.get("lastSyncTimestampGMT"),
         }
 
         return {"status": "success", "data": result}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
+def cmd_sleep_week(days=7):
+    """Get sleep data for the last N days (default 7) for weekly averages."""
+    client, err = get_client()
+    if err:
+        return {"status": "error", "message": err}
+    try:
+        today = datetime.now()
+        records = []
+
+        for i in range(days):
+            date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+            try:
+                sleep_data = client.get_sleep_data(date)
+                parsed = parse_sleep_data(sleep_data)
+                parsed["date"] = date
+
+                # Also get body battery from daily summary
+                try:
+                    daily = client.get_user_summary(date)
+                    parsed["body_battery_high"] = daily.get("bodyBatteryHighestValue")
+                    parsed["body_battery_low"] = daily.get("bodyBatteryLowestValue")
+                except Exception:
+                    parsed["body_battery_high"] = None
+                    parsed["body_battery_low"] = None
+
+                records.append(parsed)
+            except Exception:
+                # Skip days with no data
+                continue
+
+        # Calculate averages (excluding None values)
+        def avg(key):
+            values = [r.get(key) for r in records if r.get(key) is not None]
+            return round(sum(values) / len(values), 1) if values else None
+
+        averages = {
+            "sleep_score": avg("sleep_score"),
+            "avg_overnight_hrv": avg("avg_overnight_hrv"),
+            "body_battery_high": avg("body_battery_high"),
+            "resting_heart_rate": avg("resting_heart_rate"),
+            "days_with_data": len(records),
+        }
+
+        return {
+            "status": "success",
+            "data": {
+                "records": records,
+                "averages": averages,
+            },
+        }
     except Exception as exc:
         return {"status": "error", "message": str(exc)}
 
@@ -280,7 +336,7 @@ def main():
         default="json",
         help="Output format (default: json)",
     )
-    parser.add_argument("command", help="Command: login, status, today, daily, activities, steps, sleep, summary, stats")
+    parser.add_argument("command", help="Command: login, status, today, daily, activities, steps, sleep, sleep-week, summary, stats")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
 
     args = parser.parse_args()
@@ -306,6 +362,9 @@ def main():
     elif cmd == "sleep":
         date = args.args[0] if args.args else None
         result = cmd_sleep(date)
+    elif cmd == "sleep-week":
+        days = int(args.args[0]) if args.args else 7
+        result = cmd_sleep_week(days)
     elif cmd in {"summary", "stats"}:
         result = cmd_summary()
     else:
