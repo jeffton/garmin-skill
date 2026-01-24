@@ -88,6 +88,105 @@ def parse_sleep_data(sleep_data):
     return result
 
 
+def _simplify_phrase(phrase: str | None):
+    """Convert Garmin feedback phrase identifiers into a nicer label."""
+    if not phrase:
+        return None
+    # Examples: PRODUCTIVE_2, UNPRODUCTIVE, MAINTAINING
+    base = phrase.split("_")[0]
+    return base.replace("-", "_").replace(" ", "_").title().replace("_", " ")
+
+
+def parse_training_status(training_status: dict | None):
+    """Parse training status & training load from get_training_status()."""
+    if not isinstance(training_status, dict):
+        return {"training_status": None, "training_load": None}
+
+    status_block = (training_status.get("mostRecentTrainingStatus") or {}).get("latestTrainingStatusData") or {}
+    # The dict is keyed by deviceId; pick the first (primary device in practice).
+    device_payload = next(iter(status_block.values()), None)
+
+    training_status_out = None
+    training_load_out = None
+
+    if isinstance(device_payload, dict):
+        phrase = device_payload.get("trainingStatusFeedbackPhrase")
+        since_date = device_payload.get("sinceDate")
+        training_status_out = {
+            "phrase": phrase,
+            "label": _simplify_phrase(phrase),
+            "since_date": since_date,
+            "sport": device_payload.get("sport"),
+        }
+
+        acute = device_payload.get("acuteTrainingLoadDTO") or {}
+        if isinstance(acute, dict) and acute:
+            training_load_out = {
+                "acute_load": acute.get("dailyTrainingLoadAcute"),
+                "chronic_load": acute.get("dailyTrainingLoadChronic"),
+                "target_min": acute.get("minTrainingLoadChronic"),
+                "target_max": acute.get("maxTrainingLoadChronic"),
+                "ratio": acute.get("dailyAcuteChronicWorkloadRatio"),
+                "acwr_percent": acute.get("acwrPercent"),
+                "acwr_status": acute.get("acwrStatus"),
+            }
+
+    return {
+        "training_status": training_status_out,
+        "training_load": training_load_out,
+    }
+
+
+def parse_training_readiness(training_readiness: object):
+    """Parse get_training_readiness() output (usually a list with one element)."""
+    if isinstance(training_readiness, list) and training_readiness:
+        item = training_readiness[0]
+    elif isinstance(training_readiness, dict):
+        item = training_readiness
+    else:
+        return None
+
+    if not isinstance(item, dict):
+        return None
+
+    return {
+        "score": item.get("score"),
+        "level": item.get("level"),
+        "timestamp_local": item.get("timestampLocal"),
+        "sleep_score": item.get("sleepScore"),
+        "recovery_time_min": item.get("recoveryTime"),
+        "acute_load": item.get("acuteLoad"),
+        "feedback_short": item.get("feedbackShort"),
+    }
+
+
+def parse_weekly_intensity_minutes(weekly: object, week_start: str, week_end: str):
+    """Parse weekly intensity minutes aggregates."""
+    if not isinstance(weekly, list) or not weekly:
+        return None
+
+    # Choose the latest week aggregate returned.
+    item = weekly[-1]
+    if not isinstance(item, dict):
+        return None
+
+    moderate = item.get("moderateValue")
+    vigorous = item.get("vigorousValue")
+    total = None
+    if moderate is not None and vigorous is not None:
+        # Garmin counts vigorous minutes double.
+        total = int(moderate) + int(vigorous) * 2
+
+    return {
+        "week_start": item.get("calendarDate") or week_start,
+        "week_end": week_end,
+        "goal": item.get("weeklyGoal"),
+        "moderate": moderate,
+        "vigorous": vigorous,
+        "total": total,
+    }
+
+
 def cmd_login(email, password):
     client = Garmin(email, password)
     try:
@@ -175,7 +274,34 @@ def cmd_summary():
         user_summary = client.get_user_summary(today)
         # Use today's sleep record so the score matches Garmin's "Sleep today" view.
         sleep_data = client.get_sleep_data(today)
-        training_status = client.get_training_status(today)
+
+        training_status_raw = None
+        training_readiness_raw = None
+        weekly_intensity_raw = None
+
+        try:
+            training_status_raw = client.get_training_status(today)
+        except Exception:
+            training_status_raw = None
+
+        try:
+            training_readiness_raw = client.get_training_readiness(today)
+        except Exception:
+            training_readiness_raw = None
+
+        # Weekly intensity minutes (current week)
+        try:
+            dt_today = datetime.now()
+            week_start_dt = dt_today - timedelta(days=dt_today.weekday())  # Monday
+            week_start = week_start_dt.strftime("%Y-%m-%d")
+            week_end = dt_today.strftime("%Y-%m-%d")
+            weekly_intensity_raw = client.get_weekly_intensity_minutes(week_start, week_end)
+        except Exception:
+            week_start = None
+            week_end = None
+            weekly_intensity_raw = None
+
+        ts_parsed = parse_training_status(training_status_raw)
 
         result = {
             "date": today,
@@ -193,8 +319,16 @@ def cmd_summary():
             },
             "sleep": parse_sleep_data(sleep_data),
             "vo2_max": (
-                training_status.get("mostRecentVO2Max", {}).get("generic", {}).get("vo2MaxValue")
-                if training_status
+                (training_status_raw or {}).get("mostRecentVO2Max", {}).get("generic", {}).get("vo2MaxValue")
+                if training_status_raw
+                else None
+            ),
+            "training_status": ts_parsed.get("training_status"),
+            "training_load": ts_parsed.get("training_load"),
+            "training_readiness": parse_training_readiness(training_readiness_raw),
+            "intensity_minutes": (
+                parse_weekly_intensity_minutes(weekly_intensity_raw, week_start or "", week_end or "")
+                if week_start and week_end
                 else None
             ),
             "last_sync": user_summary.get("lastSyncTimestampGMT"),
@@ -407,6 +541,34 @@ def print_text(command: str, result: dict):
             print(f"Søvn: {sleep.get('total_formatted')} (score: {sleep.get('sleep_score')})")
         if data.get("vo2_max") is not None:
             print(f"VO2 max: {data.get('vo2_max')}")
+
+        ts = data.get("training_status") or {}
+        if ts.get("label"):
+            since = ts.get("since_date")
+            since_txt = f" (siden {since})" if since else ""
+            print(f"Training Status: {ts.get('label')}{since_txt}")
+
+        tr = data.get("training_readiness") or {}
+        if tr.get("score") is not None:
+            level = tr.get("level")
+            level_txt = f" ({level})" if level else ""
+            print(f"Training Readiness: {tr.get('score')}{level_txt}")
+
+        tl = data.get("training_load") or {}
+        if tl.get("acute_load") is not None:
+            target_min = tl.get("target_min")
+            target_max = tl.get("target_max")
+            target_txt = ""
+            if target_min is not None and target_max is not None:
+                target_txt = f" (target {round(target_min)}–{round(target_max)})"
+            ratio = tl.get("ratio")
+            ratio_txt = f" | ratio {ratio}" if ratio is not None else ""
+            print(f"Training Load: {tl.get('acute_load')}{target_txt}{ratio_txt}")
+
+        im = data.get("intensity_minutes") or {}
+        if im.get("total") is not None and im.get("goal") is not None:
+            print(f"Intensity Minutes (uge): {im.get('total')} / {im.get('goal')}")
+
         return
 
     if command == "sleep":
