@@ -15,12 +15,6 @@ artifacts (like `venv/`) out of git and ships only the CLI + docs.
 
 ## Installation
 
-### Option 1: ClawdHub (Recommended)
-
-Browse and install from https://clawdhub.com
-
-### Option 2: Manual Install
-
 ```bash
 # Clone/download this repo
 git clone https://github.com/jeffton/garmin-skill.git
