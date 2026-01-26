@@ -32,11 +32,13 @@ Fetch personal health and fitness data from Garmin Connect.
 | `status` | Check login status |
 | `today` | Today's summary |
 | `summary` | Comprehensive daily summary (sleep, steps, HR, body battery, VO2 max, training metrics) |
-| `activities [days]` | Recent activities |
-| `steps [days]` | Step count |
-| `sleep [date]` | Sleep data for a specific date |
-| `sleep-week [days]` | Sleep data for last N days with weekly averages |
+| `activities [days]` | Recent activities (default: 7 days) |
+| `steps [days]` | Step count (default: 1 day) |
+| `sleep [date]` | Sleep data for a specific date (default: today) |
+| `sleep-week [days]` | Sleep data for last N days with weekly averages (default: 7) |
 | `run [activity_id]` | Detailed running activity with laps and comparison |
+
+**Note:** Arguments are positional (no flags). Example: `activities 1` not `activities --days 1`.
 
 ## Summary output
 
@@ -71,20 +73,28 @@ The `run` command provides detailed running analysis:
 
 ```bash
 # Check status
-/root/clawd/skills/garmin/garmin_cli.py status
+garmin_cli.py status
+
+# Today's activities only
+garmin_cli.py activities 1
+
+# Last 7 days activities (default)
+garmin_cli.py activities
 
 # Comprehensive summary (JSON)
-/root/clawd/skills/garmin/garmin_cli.py summary
+garmin_cli.py summary
 
 # Comprehensive summary (text)
-/root/clawd/skills/garmin/garmin_cli.py --format text summary
+garmin_cli.py --format text summary
 
 # 7-day sleep with averages
-/root/clawd/skills/garmin/garmin_cli.py sleep-week
+garmin_cli.py sleep-week
 
 # Latest running activity
-/root/clawd/skills/garmin/garmin_cli.py --format text run
+garmin_cli.py --format text run
 ```
+
+Full path: `/root/clawd/skills/garmin/garmin_cli.py`
 
 ## Notes
 
