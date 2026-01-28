@@ -662,7 +662,7 @@ def main():
             result = cmd_login(args.args[0], args.args[1])
     elif cmd == "status":
         result = cmd_status()
-    elif cmd in {"today", "daily"}:
+    elif cmd == "today":
         result = cmd_today()
     elif cmd == "activities":
         days = int(args.args[0]) if args.args else 7
@@ -679,7 +679,7 @@ def main():
     elif cmd == "run":
         activity_id = int(args.args[0]) if args.args and not args.args[0].startswith("-") else None
         result = cmd_run(activity_id)
-    elif cmd in {"summary", "stats"}:
+    elif cmd == "summary":
         result = cmd_summary()
     else:
         result = {"status": "error", "message": f"Unknown command: {cmd}"}

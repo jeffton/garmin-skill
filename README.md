@@ -1,4 +1,4 @@
-# Garmin Skill for Moltbot.
+# Garmin Skill for Moltbot
 
 Fetch personal health and fitness data from Garmin Connect. Note this skill is 100% vibe coded from within Moltbot (using Claude Opus and Codex) and available commands may change. I may or may not get around to doing a proper refactor.
 
@@ -31,58 +31,33 @@ chmod +x garmin_cli.py
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `status` | Check login status |
-| `today` | Today's summary |
-| `summary` | Comprehensive daily summary (sleep, steps, HR, body battery, VO2 max, training metrics) |
-| `activities [days]` | Recent activities (default: 7 days) |
-| `steps [days]` | Step count (default: 1 day) |
-| `sleep [date]` | Sleep data for a specific date (default: today) |
-| `sleep-week [days]` | Sleep data for last N days with weekly averages (default: 7) |
-| `run [activity_id]` | Detailed running activity with laps and comparison |
-
-**Note:** Arguments are positional (no flags). Example: `activities 1` not `activities --days 1`.
-
-## Usage
-
-```bash
-# Check login status
-./garmin_cli.py status
-
-# Today's activities only
-./garmin_cli.py activities 1
-
-# Comprehensive summary (JSON)
-./garmin_cli.py summary
-
-# Comprehensive summary (human-readable)
-./garmin_cli.py --format text summary
-
-# 7-day sleep with averages
-./garmin_cli.py sleep-week
-
-# Latest running activity with lap analysis
-./garmin_cli.py --format text run
-
-# Specific run by activity ID
-./garmin_cli.py run 21647187521
-```
-
 All commands output JSON by default. Use `--format text` for human-readable output.
 
-## Summary Output
+Arguments are positional (no flags). Example: `activities 1` not `activities --days 1`.
 
-The `summary` command includes:
-- Steps, distance, calories
-- Heart rate (resting, max)
-- Body battery (low → high → current)
-- Sleep (hours, score, HRV)
-- VO2 max
-- **Training Status**: Productive/Maintaining/Detraining + since date
-- **Training Readiness**: Score 0-100 + level
-- **Training Load**: Acute load, target range, ACWR ratio
-- **Intensity Minutes**: Weekly total vs goal
+| Command | Description |
+|---------|-------------|
+| `login <email> <password>` | Login to Garmin Connect |
+| `status` | Check login status |
+| `today` | Today's quick overview |
+| `summary` | Comprehensive daily summary (sleep, steps, HR, body battery, VO2 max, training metrics) |
+| `activities [days]` | Recent activities (default: 7) |
+| `steps [days]` | Step count (default: 1) |
+| `sleep [date]` | Sleep data for a specific date (default: last night) |
+| `sleep-week [days]` | Sleep data with averages (default: 7) |
+| `run [activity_id]` | Detailed run analysis with laps and comparison (default: latest run) |
+
+### Examples
+
+```bash
+./garmin_cli.py status                    # Check login
+./garmin_cli.py summary                   # Full daily summary (JSON)
+./garmin_cli.py --format text summary     # Full daily summary (readable)
+./garmin_cli.py activities 1              # Today's activities only
+./garmin_cli.py sleep-week                # 7-day sleep with averages
+./garmin_cli.py run                       # Latest run with lap analysis
+./garmin_cli.py run 21647187521           # Specific run by activity ID
+```
 
 ## Credentials
 
