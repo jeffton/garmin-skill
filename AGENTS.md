@@ -2,7 +2,7 @@
 
 ## Repo
 - GitHub: https://github.com/jeffton/garmin-skill
-- Branch: master
+- Branch: main
 
 ## About this skill
 CLI wrapper for the Garmin Connect API. Fetches sleep, activities, body battery, HRV, steps, etc.
