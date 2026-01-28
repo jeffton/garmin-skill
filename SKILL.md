@@ -53,7 +53,6 @@ All commands output JSON. Arguments are positional: `activities 1` not `activiti
 
 Full path: `/root/clawd/skills/garmin/garmin_cli.py`
 
-## Notes
+## Credentials
 
-- Requires Garmin Connect credentials stored in `~/.config/garmin/credentials.json`
-- API may be rate-limited
+Stored in `~/.config/garmin/credentials.json` (mode 600, plaintext).
