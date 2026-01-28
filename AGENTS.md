@@ -13,7 +13,7 @@ CLI wrapper for the Garmin Connect API. Fetches sleep, activities, body battery,
 - `SKILL.md` - Clawdbot skill documentation
 
 ## Credentials
-Garmin login is stored in `~/.config/garmin/credentials.json` (encrypted, not in repo).
+Garmin login is stored in `~/.config/garmin/credentials.json` (not in repo).
 
 ## Commands
 - `status` - Check login
