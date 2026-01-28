@@ -50,7 +50,7 @@ All commands output JSON. Arguments are positional: `activities 1` not `activiti
 ./garmin_cli.py status              # Check login
 ./garmin_cli.py summary             # Full daily summary
 ./garmin_cli.py activities 1        # Today's activities only
-./garmin_cli.py sleep-week          # 7-day sleep with averages
+./garmin_cli.py sleep               # 7-day sleep with averages
 ./garmin_cli.py run                 # Latest run with lap analysis
 ./garmin_cli.py run 21647187521     # Specific run by activity ID
 ```
