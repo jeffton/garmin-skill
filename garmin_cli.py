@@ -4,7 +4,7 @@
 Examples:
   ./garmin_cli.py status
   ./garmin_cli.py summary
-  ./garmin_cli.py sleep 2026-01-17
+  ./garmin_cli.py sleep 7
 """
 
 import argparse
@@ -244,20 +244,6 @@ def cmd_steps(days=1):
         return {"status": "error", "message": str(exc)}
 
 
-def cmd_sleep(date=None):
-    client, err = get_client()
-    if err:
-        return {"status": "error", "message": err}
-    try:
-        if not date:
-            date = datetime.now().strftime("%Y-%m-%d")
-        sleep_data = client.get_sleep_data(date)
-        result = {"date": date}
-        result.update(parse_sleep_data(sleep_data))
-        return {"status": "success", "data": result}
-    except Exception as exc:
-        return {"status": "error", "message": str(exc)}
-
 
 def cmd_summary():
     """Get comprehensive daily summary."""
@@ -335,7 +321,7 @@ def cmd_summary():
         return {"status": "error", "message": str(exc)}
 
 
-def cmd_sleep_week(days=7):
+def cmd_sleep(days=7):
     """Get sleep data for the last N days (default 7) for weekly averages."""
     client, err = get_client()
     if err:
@@ -517,7 +503,7 @@ def cmd_run(activity_id=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Garmin Connect CLI")
-    parser.add_argument("command", help="Command: login, status, today, activities, steps, sleep, sleep-week, run, summary")
+    parser.add_argument("command", help="Command: login, status, today, activities, steps, sleep, run, summary")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
 
     args = parser.parse_args()
@@ -541,11 +527,8 @@ def main():
         days = int(args.args[0]) if args.args else 1
         result = cmd_steps(days)
     elif cmd == "sleep":
-        date = args.args[0] if args.args else None
-        result = cmd_sleep(date)
-    elif cmd == "sleep-week":
         days = int(args.args[0]) if args.args else 7
-        result = cmd_sleep_week(days)
+        result = cmd_sleep(days)
     elif cmd == "run":
         activity_id = int(args.args[0]) if args.args and not args.args[0].startswith("-") else None
         result = cmd_run(activity_id)
