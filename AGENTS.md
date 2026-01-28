@@ -4,25 +4,25 @@
 - GitHub: https://github.com/jeffton/garmin-skill
 - Branch: master
 
-## Om denne skill
-CLI-wrapper til Garmin Connect API. Henter søvn, aktiviteter, body battery, HRV, steps osv.
+## About this skill
+CLI wrapper for the Garmin Connect API. Fetches sleep, activities, body battery, HRV, steps, etc.
 
-## Struktur
-- `garmin_cli.py` - Hovedscript med alle commands
-- `venv/` - Python virtual environment (ikke committet)
-- `SKILL.md` - Clawdbot skill-dokumentation
+## Structure
+- `garmin_cli.py` - Main script with all commands
+- `venv/` - Python virtual environment (not committed)
+- `SKILL.md` - Clawdbot skill documentation
 
 ## Credentials
-Garmin login gemmes i `~/.config/garmin/credentials.json` (krypteret, ikke i repo).
+Garmin login is stored in `~/.config/garmin/credentials.json` (encrypted, not in repo).
 
 ## Commands
 - `status` - Check login
-- `today` / `daily` - Dagens overblik
-- `sleep [date]` - Søvndata for en dato
-- `sleep-week [days]` - Søvndata for N dage med gennemsnit
-- `run [activity_id]` - Detaljeret løbeaktivitet med laps og sammenligning
-- `summary` / `stats` - Komplet dagsoverblik
-- `activities [days]` - Aktiviteter
+- `today` / `daily` - Today's overview
+- `sleep [date]` - Sleep data for a date
+- `sleep-week [days]` - Sleep data for N days with averages
+- `run [activity_id]` - Detailed running activity with laps and comparison
+- `summary` / `stats` - Complete daily overview
+- `activities [days]` - Activities
 
 ## Push policy
-Ændringer må gerne pushes direkte til master. Skill'en bruges kun af Clawdbot og har ingen eksterne afhængigheder.
+Changes may be pushed directly to master. The skill is only used by Clawdbot and has no external dependencies.
