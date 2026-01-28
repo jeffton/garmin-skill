@@ -54,3 +54,7 @@ Full path: `/root/clawd/skills/garmin/garmin_cli.py`
 ## Credentials
 
 Stored in `~/.config/garmin/credentials.json` (mode 600, plaintext).
+
+## Environment
+
+- `GARMIN_LIB_PATH` - Optional path to garminconnect library (if not in venv)
