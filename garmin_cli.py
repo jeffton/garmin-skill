@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """Garmin Connect CLI wrapper for Clawdbot skill.
 
-Outputs JSON by default (stable for scripting). Use `--format text` for a
-human-friendly summary.
-
 Examples:
   ./garmin_cli.py status
   ./garmin_cli.py summary
-  ./garmin_cli.py --format text summary
   ./garmin_cli.py sleep 2026-01-17
 """
 
@@ -518,136 +514,10 @@ def cmd_run(activity_id=None):
         return {"status": "error", "message": str(exc)}
 
 
-def print_text(command: str, result: dict):
-    status = result.get("status")
-    if status != "success":
-        print(result.get("message", "Error"))
-        return
-
-    if command in {"summary", "stats"}:
-        data = result.get("data", {})
-        hr = data.get("heart_rate", {})
-        bb = data.get("body_battery", {})
-        sleep = data.get("sleep", {})
-
-        print(f"Dato: {data.get('date')}")
-        print(f"Skridt: {data.get('steps')}")
-        print(f"Distance: {data.get('distance_km')} km")
-        print(f"Kalorier: {data.get('calories')}")
-        print(f"Hvilepuls: {hr.get('resting')}")
-        print(f"Max puls: {hr.get('max')}")
-        print(f"Body Battery: {bb.get('lowest')} → {bb.get('highest')}")
-        if sleep:
-            print(f"Søvn: {sleep.get('total_formatted')} (score: {sleep.get('sleep_score')})")
-        if data.get("vo2_max") is not None:
-            print(f"VO2 max: {data.get('vo2_max')}")
-
-        ts = data.get("training_status") or {}
-        if ts.get("label"):
-            since = ts.get("since_date")
-            since_txt = f" (siden {since})" if since else ""
-            print(f"Training Status: {ts.get('label')}{since_txt}")
-
-        tr = data.get("training_readiness") or {}
-        if tr.get("score") is not None:
-            level = tr.get("level")
-            level_txt = f" ({level})" if level else ""
-            print(f"Training Readiness: {tr.get('score')}{level_txt}")
-
-        tl = data.get("training_load") or {}
-        if tl.get("acute_load") is not None:
-            target_min = tl.get("target_min")
-            target_max = tl.get("target_max")
-            target_txt = ""
-            if target_min is not None and target_max is not None:
-                target_txt = f" (target {round(target_min)}–{round(target_max)})"
-            ratio = tl.get("ratio")
-            ratio_txt = f" | ratio {ratio}" if ratio is not None else ""
-            print(f"Training Load: {tl.get('acute_load')}{target_txt}{ratio_txt}")
-
-        im = data.get("intensity_minutes") or {}
-        if im.get("total") is not None and im.get("goal") is not None:
-            print(f"Intensity Minutes (uge): {im.get('total')} / {im.get('goal')}")
-
-        return
-
-    if command == "sleep":
-        data = result.get("data", {})
-        print(f"Dato: {data.get('date')}")
-        print(f"Søvn: {data.get('total_formatted')} (score: {data.get('sleep_score')})")
-        if data.get("resting_heart_rate") is not None:
-            print(f"Hvilepuls: {data.get('resting_heart_rate')}")
-        if data.get("avg_overnight_hrv") is not None:
-            print(f"HRV: {data.get('avg_overnight_hrv')} ({data.get('hrv_status')})")
-        return
-
-    if command == "status":
-        print("OK: logged in")
-        return
-
-    if command == "steps":
-        for row in result.get("data", []):
-            print(f"{row.get('date')}: {row.get('steps')}")
-        return
-
-    if command == "activities":
-        activities = result.get("activities", [])
-        print(f"Aktiviteter: {len(activities)}")
-        for act in activities[:10]:
-            name = act.get("activityName") or act.get("activityType", {}).get("typeKey") or "Activity"
-            start = act.get("startTimeLocal") or ""
-            dist = act.get("distance")
-            if dist is not None:
-                dist = round(dist / 1000, 2)
-                print(f"- {start}: {name} ({dist} km)")
-            else:
-                print(f"- {start}: {name}")
-        return
-
-    if command in {"today", "daily"}:
-        data = result.get("data", {})
-        print(f"Dato: {datetime.now().strftime('%Y-%m-%d')}")
-        print(f"Skridt: {data.get('totalSteps')}")
-        print(f"Distance: {round((data.get('totalDistanceMeters', 0) or 0) / 1000, 1)} km")
-        print(f"Kalorier: {data.get('totalKilocalories')}")
-        return
-
-    if command == "run":
-        data = result.get("data", {})
-        print(f"🏃 {data.get('name')} — {data.get('date', '')[:10]}")
-        print(f"Distance: {data.get('distance_km')} km")
-        print(f"Tid: {data.get('duration_formatted')} (pace {data.get('pace_formatted')}/km)")
-        print(f"Puls: {data.get('avg_hr')} snit / {data.get('max_hr')} max")
-        print(f"VO2 Max: {data.get('vo2_max')} | Aerobic TE: {data.get('aerobic_te')}")
-        print()
-
-        laps = data.get("laps", [])
-        if laps:
-            print("Laps:")
-            for lap in laps:
-                dist_label = f"{lap['distance_m']}m" if lap['distance_m'] < 1000 else "1 km"
-                print(f"  {lap['lap']}: {lap['duration_formatted']} ({lap['pace_formatted']}/km) | HR {lap['avg_hr']} | {lap.get('avg_power', '-')}W")
-            print()
-
-        recent = data.get("recent_runs", [])
-        if recent:
-            print("Seneste løb:")
-            for run in recent:
-                print(f"  {run['date']}: {run['distance_km']} km @ {run['pace_formatted']}/km | HR {run['avg_hr']} | VO2 {run['vo2_max']}")
-        return
-
-    print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
-
 
 def main():
     parser = argparse.ArgumentParser(description="Garmin Connect CLI")
-    parser.add_argument(
-        "--format",
-        choices=["json", "text"],
-        default="json",
-        help="Output format (default: json)",
-    )
-    parser.add_argument("command", help="Command: login, status, today, daily, activities, steps, sleep, sleep-week, run, summary, stats")
+    parser.add_argument("command", help="Command: login, status, today, activities, steps, sleep, sleep-week, run, summary")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
 
     args = parser.parse_args()
@@ -684,11 +554,7 @@ def main():
     else:
         result = {"status": "error", "message": f"Unknown command: {cmd}"}
 
-    if args.format == "text":
-        print_text(cmd, result)
-    else:
-        print(json.dumps(result, ensure_ascii=False, default=str))
-
+    print(json.dumps(result, ensure_ascii=False, default=str))
 
 if __name__ == "__main__":
     main()

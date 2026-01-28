@@ -31,9 +31,7 @@ chmod +x garmin_cli.py
 
 ## Commands
 
-All commands output JSON by default. Use `--format text` for human-readable output.
-
-Arguments are positional (no flags). Example: `activities 1` not `activities --days 1`.
+All commands output JSON. Arguments are positional: `activities 1` not `activities --days 1`.
 
 | Command | Description |
 |---------|-------------|
@@ -50,13 +48,12 @@ Arguments are positional (no flags). Example: `activities 1` not `activities --d
 ### Examples
 
 ```bash
-./garmin_cli.py status                    # Check login
-./garmin_cli.py summary                   # Full daily summary (JSON)
-./garmin_cli.py --format text summary     # Full daily summary (readable)
-./garmin_cli.py activities 1              # Today's activities only
-./garmin_cli.py sleep-week                # 7-day sleep with averages
-./garmin_cli.py run                       # Latest run with lap analysis
-./garmin_cli.py run 21647187521           # Specific run by activity ID
+./garmin_cli.py status              # Check login
+./garmin_cli.py summary             # Full daily summary
+./garmin_cli.py activities 1        # Today's activities only
+./garmin_cli.py sleep-week          # 7-day sleep with averages
+./garmin_cli.py run                 # Latest run with lap analysis
+./garmin_cli.py run 21647187521     # Specific run by activity ID
 ```
 
 ## Credentials
