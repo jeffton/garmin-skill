@@ -1,6 +1,6 @@
 ---
 name: garmin
-description: Fetch Garmin Connect health and fitness data (activities, sleep, heart rate, steps, training stats). Use when you need Garmin Connect metrics.
+description: Fetch Garmin Connect health and fitness data (activities, sleep, heart rate, training stats). Use when you need Garmin Connect metrics.
 license: MIT
 compatibility: Python 3.8+ with garminconnect; requires Garmin Connect account and network access.
 metadata:
@@ -34,9 +34,8 @@ All commands output JSON. Arguments are positional: `activities 1` not `activiti
 | `login <email> <password>` | Login to Garmin Connect |
 | `status` | Check login status |
 | `today` | Today's quick overview |
-| `summary` | Comprehensive daily summary (sleep, steps, HR, body battery, VO2 max, training metrics) |
+| `summary` | Comprehensive daily summary (sleep, HR, body battery, VO2 max, training metrics) |
 | `activities [days]` | Recent activities (default: 7) |
-| `steps [days]` | Step count (default: 1) |
 | `sleep` | Sleep data with 7-day averages |
 | `run [activity_id]` | Detailed run analysis with laps and comparison (default: latest run) |
 

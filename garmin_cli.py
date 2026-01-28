@@ -228,20 +228,6 @@ def cmd_activities(days=7):
         return {"status": "error", "message": str(exc)}
 
 
-def cmd_steps(days=1):
-    client, err = get_client()
-    if err:
-        return {"status": "error", "message": err}
-    try:
-        today = datetime.now()
-        data = []
-        for i in range(7):
-            date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
-            day_data = client.get_steps_data(date)
-            data.append({"date": date, "steps": day_data})
-        return {"status": "success", "data": data}
-    except Exception as exc:
-        return {"status": "error", "message": str(exc)}
 
 
 
@@ -503,7 +489,7 @@ def cmd_run(activity_id=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Garmin Connect CLI")
-    parser.add_argument("command", help="Command: login, status, today, activities, steps, sleep, run, summary")
+    parser.add_argument("command", help="Command: login, status, today, activities, sleep, run, summary")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
 
     args = parser.parse_args()
@@ -523,9 +509,6 @@ def main():
     elif cmd == "activities":
         days = int(args.args[0]) if args.args else 7
         result = cmd_activities(days)
-    elif cmd == "steps":
-        days = int(args.args[0]) if args.args else 1
-        result = cmd_steps(days)
     elif cmd == "sleep":
         result = cmd_sleep()
     elif cmd == "run":
