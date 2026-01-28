@@ -219,7 +219,7 @@ def cmd_activities(days=7):
     try:
         today = datetime.now()
         activities = []
-        for i in range(7):
+        for i in range(days):
             date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
             day_acts = client.get_activities_by_date(date, date)
             activities.extend(day_acts)
