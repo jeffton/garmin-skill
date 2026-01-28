@@ -41,7 +41,7 @@ All commands output JSON. Arguments are positional: `activities 1` not `activiti
 | `summary` | Comprehensive daily summary (sleep, steps, HR, body battery, VO2 max, training metrics) |
 | `activities [days]` | Recent activities (default: 7) |
 | `steps [days]` | Step count (default: 1) |
-| `sleep [days]` | Sleep data with weekly averages (default: 7) |
+| `sleep` | Sleep data with 7-day averages |
 | `run [activity_id]` | Detailed run analysis with laps and comparison (default: latest run) |
 
 ### Examples

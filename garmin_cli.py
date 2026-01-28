@@ -219,7 +219,7 @@ def cmd_activities(days=7):
     try:
         today = datetime.now()
         activities = []
-        for i in range(days):
+        for i in range(7):
             date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
             day_acts = client.get_activities_by_date(date, date)
             activities.extend(day_acts)
@@ -235,7 +235,7 @@ def cmd_steps(days=1):
     try:
         today = datetime.now()
         data = []
-        for i in range(days):
+        for i in range(7):
             date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
             day_data = client.get_steps_data(date)
             data.append({"date": date, "steps": day_data})
@@ -321,7 +321,7 @@ def cmd_summary():
         return {"status": "error", "message": str(exc)}
 
 
-def cmd_sleep(days=7):
+def cmd_sleep():
     """Get sleep data for the last N days (default 7) for weekly averages."""
     client, err = get_client()
     if err:
@@ -330,7 +330,7 @@ def cmd_sleep(days=7):
         today = datetime.now()
         records = []
 
-        for i in range(days):
+        for i in range(7):
             date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
             try:
                 sleep_data = client.get_sleep_data(date)
@@ -521,14 +521,13 @@ def main():
     elif cmd == "today":
         result = cmd_today()
     elif cmd == "activities":
-        days = int(args.args[0]) if args.args else 7
+        pass
         result = cmd_activities(days)
     elif cmd == "steps":
         days = int(args.args[0]) if args.args else 1
         result = cmd_steps(days)
     elif cmd == "sleep":
-        days = int(args.args[0]) if args.args else 7
-        result = cmd_sleep(days)
+        result = cmd_sleep()
     elif cmd == "run":
         activity_id = int(args.args[0]) if args.args and not args.args[0].startswith("-") else None
         result = cmd_run(activity_id)
