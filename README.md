@@ -2,14 +2,6 @@
 
 Fetch personal health and fitness data from Garmin Connect. Note this skill is 100% vibe coded from within Moltbot (using Claude Opus and Codex) and available commands may change. I may or may not get around to doing a proper refactor.
 
-## Features
-
-- **Daily Summary**: Steps, calories, distance, heart rate, body battery
-- **Activities**: Running, cycling, swimming, strength training with detailed stats
-- **Sleep Data**: Duration, quality, HRV, weekly averages
-- **Training Metrics**: VO2 max, training load, training readiness, training status
-- **Run Analysis**: Lap splits, pace, HR, power, cadence, comparison with recent runs
-
 ## Installation
 
 ```bash
