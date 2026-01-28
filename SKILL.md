@@ -6,7 +6,7 @@ compatibility: Python 3.8+ with garminconnect; requires Garmin Connect account a
 metadata:
   homepage: https://github.com/jeffton/garmin-skill
   emoji: "⌚"
-  version: 0.2.0
+  version: 0.3.0
   tags:
     - health
     - fitness
@@ -22,82 +22,38 @@ Fetch personal health and fitness data from Garmin Connect.
 
 ```bash
 # Login once
-/root/clawd/skills/garmin/garmin_cli.py login <email> <password>
+./garmin_cli.py login <email> <password>
 ```
 
 ## Commands
 
+All commands output JSON. Arguments are positional: `activities 1` not `activities --days 1`.
+
 | Command | Description |
 |---------|-------------|
+| `login <email> <password>` | Login to Garmin Connect |
 | `status` | Check login status |
-| `today` | Today's summary |
+| `today` | Today's quick overview |
 | `summary` | Comprehensive daily summary (sleep, steps, HR, body battery, VO2 max, training metrics) |
-| `activities [days]` | Recent activities (default: 7 days) |
-| `steps [days]` | Step count (default: 1 day) |
-| `sleep [date]` | Sleep data for a specific date (default: today) |
-| `sleep-week [days]` | Sleep data for last N days with weekly averages (default: 7) |
-| `run [activity_id]` | Detailed running activity with laps and comparison |
-
-**Note:** Arguments are positional (no flags). Example: `activities 1` not `activities --days 1`.
-
-## Summary output
-
-The `summary` command includes:
-- Steps, distance, calories
-- Heart rate (resting, max)
-- Body battery (low → high)
-- Sleep (hours, score)
-- VO2 max
-- **Training Status**: Productive/Unproductive + since date
-- **Training Readiness**: Score 0-100 + level
-- **Training Load**: Acute load, target range, ACWR ratio
-- **Intensity Minutes**: Weekly total vs goal
-- Last sync timestamp
-
-## Run command
-
-The `run` command provides detailed running analysis:
-- Lap splits with pace, HR, power, cadence
-- Comparison with last 5 running activities
-- VO2 Max trend, training effect, training load
-
-```bash
-# Latest run
-/root/clawd/skills/garmin/garmin_cli.py --format text run
-
-# Specific activity
-/root/clawd/skills/garmin/garmin_cli.py run 21647187521
-```
+| `activities [days]` | Recent activities (default: 7) |
+| `steps [days]` | Step count (default: 1) |
+| `sleep` | Sleep data with 7-day averages |
+| `run [activity_id]` | Detailed run analysis with laps and comparison (default: latest run) |
 
 ## Examples
 
 ```bash
-# Check status
-garmin_cli.py status
-
-# Today's activities only
-garmin_cli.py activities 1
-
-# Last 7 days activities (default)
-garmin_cli.py activities
-
-# Comprehensive summary (JSON)
-garmin_cli.py summary
-
-# Comprehensive summary (text)
-garmin_cli.py --format text summary
-
-# 7-day sleep with averages
-garmin_cli.py sleep-week
-
-# Latest running activity
-garmin_cli.py --format text run
+./garmin_cli.py status              # Check login
+./garmin_cli.py summary             # Full daily summary
+./garmin_cli.py activities 1        # Today's activities only
+./garmin_cli.py sleep               # 7-day sleep with averages
+./garmin_cli.py run                 # Latest run with lap analysis
+./garmin_cli.py run 21647187521     # Specific run by activity ID
 ```
 
 Full path: `/root/clawd/skills/garmin/garmin_cli.py`
 
 ## Notes
 
-- Requires Garmin Connect credentials
-- API rate-limited
-- Sync timestamp shows when watch last synced
+- Requires Garmin Connect credentials stored in `~/.config/garmin/credentials.json`
+- API may be rate-limited
