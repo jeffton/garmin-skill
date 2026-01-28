@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Garmin Connect CLI wrapper for Clawdbot skill.
+"""Garmin Connect CLI wrapper for Moltbot skill.
 
 Examples:
   ./garmin_cli.py status
   ./garmin_cli.py summary
-  ./garmin_cli.py sleep 7
+  ./garmin_cli.py sleep
 """
 
 import argparse
