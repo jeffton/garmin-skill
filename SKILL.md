@@ -33,7 +33,6 @@ All commands output JSON. Arguments are positional: `activities 1` not `activiti
 |---------|-------------|
 | `login <email> <password>` | Login to Garmin Connect |
 | `status` | Check login status |
-| `today` | Today's quick overview |
 | `summary` | Comprehensive daily summary (sleep, HR, body battery, VO2 max, training metrics) |
 | `activities [days]` | Recent activities (default: 7) |
 | `sleep` | Sleep data with 7-day averages |

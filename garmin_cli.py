@@ -200,16 +200,6 @@ def cmd_status():
     return {"status": "success", "logged_in": True}
 
 
-def cmd_today():
-    client, err = get_client()
-    if err:
-        return {"status": "error", "message": err}
-    try:
-        today = datetime.now().strftime("%Y-%m-%d")
-        data = client.get_user_summary(today)
-        return {"status": "success", "data": data}
-    except Exception as exc:
-        return {"status": "error", "message": str(exc)}
 
 
 def cmd_activities(days=7):
@@ -284,6 +274,10 @@ def cmd_summary():
                 "highest": user_summary.get("bodyBatteryHighestValue", 0),
                 "lowest": user_summary.get("bodyBatteryLowestValue", 0),
                 "most_recent": user_summary.get("bodyBatteryMostRecentValue"),
+            },
+            "stress": {
+                "average": user_summary.get("averageStressLevel"),
+                "qualifier": user_summary.get("stressQualifier"),
             },
             "sleep": parse_sleep_data(sleep_data),
             "vo2_max": (
@@ -489,7 +483,7 @@ def cmd_run(activity_id=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Garmin Connect CLI")
-    parser.add_argument("command", help="Command: login, status, today, activities, sleep, run, summary")
+    parser.add_argument("command", help="Command: login, status, activities, sleep, run, summary")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Command arguments")
 
     args = parser.parse_args()
@@ -504,8 +498,6 @@ def main():
             result = cmd_login(args.args[0], args.args[1])
     elif cmd == "status":
         result = cmd_status()
-    elif cmd == "today":
-        result = cmd_today()
     elif cmd == "activities":
         days = int(args.args[0]) if args.args else 7
         result = cmd_activities(days)
