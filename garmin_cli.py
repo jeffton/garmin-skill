@@ -521,7 +521,7 @@ def main():
     elif cmd == "today":
         result = cmd_today()
     elif cmd == "activities":
-        pass
+        days = int(args.args[0]) if args.args else 7
         result = cmd_activities(days)
     elif cmd == "steps":
         days = int(args.args[0]) if args.args else 1
