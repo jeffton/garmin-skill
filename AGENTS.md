@@ -10,7 +10,7 @@ CLI wrapper for the Garmin Connect API. Fetches sleep, activities, body battery,
 ## Structure
 - `garmin_cli.py` - Main script with all commands
 - `venv/` - Python virtual environment (not committed)
-- `SKILL.md` - Moltbot skill documentation
+- `SKILL.md` - OpenClaw skill documentation
 
 ## Credentials
 Garmin login is stored in `~/.config/garmin/credentials.json` (not in repo).
@@ -25,4 +25,4 @@ Garmin login is stored in `~/.config/garmin/credentials.json` (not in repo).
 - `activities [days]` - Activities
 
 ## Push policy
-Changes may be pushed directly to master. The skill is only used by Moltbot and has no external dependencies.
+Changes may be pushed directly to master. The skill is only used by OpenClaw and has no external dependencies.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Garmin Connect CLI wrapper for Moltbot skill.
+"""Garmin Connect CLI wrapper for OpenClaw skill.
 
 Examples:
   ./garmin_cli.py status
