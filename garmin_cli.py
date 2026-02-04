@@ -263,9 +263,9 @@ def cmd_summary():
 
         result = {
             "date": today,
-            "steps": user_summary.get("totalSteps", 0),
-            "distance_km": round(user_summary.get("totalDistanceMeters", 0) / 1000, 1),
-            "calories": user_summary.get("totalKilocalories", 0),
+            "steps": user_summary.get("totalSteps") or 0,
+            "distance_km": round((user_summary.get("totalDistanceMeters") or 0) / 1000, 1),
+            "calories": user_summary.get("totalKilocalories") or 0,
             "heart_rate": {
                 "resting": user_summary.get("restingHeartRate", 0),
                 "max": user_summary.get("maxHeartRate", 0),
