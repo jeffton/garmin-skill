@@ -23,6 +23,6 @@ chmod +x garmin_cli.py
 
 See [SKILL.md](SKILL.md) for commands and usage.
 
-## License
+## Credit
 
-MIT - Built on [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)
+Built on [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)
