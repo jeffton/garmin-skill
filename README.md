@@ -1,6 +1,6 @@
 # Garmin Skill for OpenClaw
 
-Fetch personal health and fitness data from Garmin Connect. Note this skill is 100% vibe coded from within OpenClaw (using Claude Opus and Codex) and available commands may change. I may or may not get around to doing a proper refactor.
+Fetch personal health and fitness data from Garmin Connect. Note this skill is 100% vibe coded from within OpenClaw (using Claude Opus and Codex) and available commands may change.
 
 ## Installation
 
